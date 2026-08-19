@@ -4,13 +4,33 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="light dark" />
+		<script>
+			// Resolve the theme before first paint so a dark-mode reload never
+			// flashes the light surface. Runs blocking and on purpose.
+			(function () {
+				try {
+					var stored = localStorage.getItem('dagnav-theme');
+					if (stored !== 'light' && stored !== 'dark') {
+						stored = window.matchMedia('(prefers-color-scheme: dark)').matches
+							? 'dark'
+							: 'light';
+					}
+					document.documentElement.dataset.theme = stored;
+				} catch (e) {
+					document.documentElement.dataset.theme = 'light';
+				}
+			})();
+		</script>
 		<style>
-			:root {
-				font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
-				-webkit-font-smoothing: antialiased;
-				-moz-osx-font-smoothing: grayscale;
+			/* Bridge only -- the real tokens live in src/routes/style.css. These two
+			   rules keep the pre-hydration paint on the right surface. */
+			html[data-theme='dark'] {
+				background-color: #0d0d0d;
 			}
-
+			html:not([data-theme='dark']) {
+				background-color: #f9f9f7;
+			}
 			body {
 				margin: 0;
 				padding: 0;

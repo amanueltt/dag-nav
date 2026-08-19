@@ -1,11 +1,228 @@
-   /* Reset and base styles */
-   * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+/* ---------------------------------------------------------------------------
+   DAGNav design tokens
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  }
+   Every colour in the app resolves through one of the custom properties below,
+   so light and dark are two value sets rather than two stylesheets.
+
+   Chart colours come from a validated palette: the categorical slots, the
+   sequential blue ramp and the fixed status colours all clear the lightness
+   band, chroma floor, CVD separation and contrast checks against the surfaces
+   declared here. Slots are assigned in fixed order and never cycled -- read the
+   comments on --series-* before changing one.
+   --------------------------------------------------------------------------- */
+
+:root {
+	color-scheme: light;
+
+	/* Surfaces, back to front */
+	--page: #f9f9f7;
+	--surface-1: #fcfcfb; /* panels */
+	--surface-2: #f4f4f1; /* cards nested inside panels */
+	--surface-3: #eeede9; /* hover wash */
+
+	/* Ink */
+	--text-1: #0b0b0b;
+	--text-2: #52514e;
+	--text-3: #898781; /* axis ticks, labels, metadata */
+
+	/* Lines */
+	--border: rgba(11, 11, 11, 0.1);
+	--border-strong: rgba(11, 11, 11, 0.16);
+	--grid: #e1e0d9; /* chart gridlines -- hairline, solid, never dashed */
+	--axis: #c3c2b7;
+
+	/* Accent -- categorical slot 1, doubling as the UI accent so the charts and
+	   the chrome read as one system */
+	--accent: #2a78d6;
+	--accent-hover: #256abf;
+	--accent-ink: #ffffff; /* text on an accent fill */
+	--accent-wash: rgba(42, 120, 214, 0.1);
+	--accent-ring: rgba(42, 120, 214, 0.4);
+
+	/* Categorical slots, fixed order. Slots 1-3 are the only ones validated for
+	   all-pairs use (scatter, graph), so the graph highlights stop at three. */
+	--series-1: #2a78d6; /* blue */
+	--series-2: #eb6834; /* orange */
+	--series-3: #1baf7a; /* aqua */
+
+	/* Status -- fixed, never themed, never reused as a series colour. Always
+	   paired with a text label or a distinct mark shape, never colour alone. */
+	--status-good: #0ca30c;
+	--status-critical: #d03b3b;
+	--status-critical-ink: #ffffff;
+
+	/* Neutral data mark, for series that carry no category (train/test) */
+	--mark-neutral: #6f6d68;
+
+	/* Ink for text sitting on a warm/light fill (orange, aqua). Near-black beats
+	   white on those hues in *both* modes, so this is deliberately not themed. */
+	--on-warm: #0b0b0b;
+
+	/* Graph: neutral base node + the three validated highlight slots */
+	--graph-node: #6b7280;
+	--graph-node-ink: #ffffff;
+	--graph-edge: #d8d7d0;
+	--graph-anchor: #184f95; /* the clicked node -- darkest blue step */
+	--graph-anchor-ink: #ffffff;
+
+	/* Geometry & motion */
+	--radius-sm: 6px;
+	--radius: 10px;
+	--shadow-menu: 0 6px 24px rgba(11, 11, 11, 0.12);
+	--speed: 150ms;
+
+	--font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
+		'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Dark values are *selected* for the dark surface, not an automatic flip of the
+   light ones. Declared under both scopes: the media query covers the OS
+   setting, the [data-theme] scope covers the in-app toggle, and the :not()
+   guard lets an explicit light choice beat OS dark. */
+@media (prefers-color-scheme: dark) {
+	:root:where(:not([data-theme='light'])) {
+		color-scheme: dark;
+
+		--page: #0d0d0d;
+		--surface-1: #1a1a19;
+		--surface-2: #232322;
+		--surface-3: #2c2c2a;
+
+		--text-1: #ffffff;
+		--text-2: #c3c2b7;
+		--text-3: #898781;
+
+		--border: rgba(255, 255, 255, 0.1);
+		--border-strong: rgba(255, 255, 255, 0.18);
+		--grid: #2c2c2a;
+		--axis: #383835;
+
+		--accent: #3987e5;
+		--accent-hover: #5598e7;
+		--accent-ink: #0b0b0b;
+		--accent-wash: rgba(57, 135, 229, 0.18);
+		--accent-ring: rgba(57, 135, 229, 0.5);
+
+		--series-1: #3987e5;
+		--series-2: #d95926;
+		--series-3: #199e70;
+
+		--mark-neutral: #a3a19a;
+
+		--graph-node: #6b7280;
+		--graph-node-ink: #ffffff;
+		--graph-edge: #35352f;
+		--graph-anchor: #cde2fb;
+		--graph-anchor-ink: #0b0b0b;
+
+		--shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.5);
+	}
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+
+	--page: #0d0d0d;
+	--surface-1: #1a1a19;
+	--surface-2: #232322;
+	--surface-3: #2c2c2a;
+
+	--text-1: #ffffff;
+	--text-2: #c3c2b7;
+	--text-3: #898781;
+
+	--border: rgba(255, 255, 255, 0.1);
+	--border-strong: rgba(255, 255, 255, 0.18);
+	--grid: #2c2c2a;
+	--axis: #383835;
+
+	--accent: #3987e5;
+	--accent-hover: #5598e7;
+	--accent-ink: #0b0b0b;
+	--accent-wash: rgba(57, 135, 229, 0.18);
+	--accent-ring: rgba(57, 135, 229, 0.5);
+
+	--series-1: #3987e5;
+	--series-2: #d95926;
+	--series-3: #199e70;
+
+	--mark-neutral: #a3a19a;
+
+	--graph-node: #6b7280;
+	--graph-node-ink: #ffffff;
+	--graph-edge: #35352f;
+	--graph-anchor: #cde2fb;
+	--graph-anchor-ink: #0b0b0b;
+
+	--shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Reset & base ------------------------------------------------------- */
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html,
+body {
+	height: 100%;
+}
+
+body {
+	font-family: var(--font-sans);
+	background-color: var(--page);
+	color: var(--text-1);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	transition: background-color var(--speed) ease, color var(--speed) ease;
+}
+
+/* One visible focus treatment everywhere, keyboard-only */
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	border-radius: var(--radius-sm);
+}
+
+/* Thin themed scrollbars so the panels stay quiet in both modes */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: var(--border-strong);
+	border: 3px solid transparent;
+	border-radius: 999px;
+	background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background-color: var(--text-3);
+	background-clip: content-box;
+}
+
+/* Columns of numbers line up; standalone display numbers stay proportional */
+.tabular {
+	font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+	}
+}

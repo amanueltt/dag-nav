@@ -76,6 +76,7 @@
 <div class="vertex-list-container">
     <div class="vertex-list-header">
         <h2>Vertices</h2>
+        <span class="count tabular">{vertexStats.length}</span>
     </div>
     
     <div class="vertex-list-wrapper">
@@ -87,14 +88,17 @@
             
             <ul>
                 {#each vertexStats as vertex}
-                    <button 
-                        class="vertex-list-item"
-                        class:selected={selectedVertexId === vertex.id}
-                        onclick={() => handleVertexClick(vertex)}
-                    >
-                        <div class="vertex-id">{vertex.id}</div>
-                        <div class="vertex-count">{vertex.count}</div>
-                    </button>
+                    <li>
+                        <button 
+                            class="vertex-list-item"
+                            class:selected={selectedVertexId === vertex.id}
+                            aria-pressed={selectedVertexId === vertex.id}
+                            onclick={() => handleVertexClick(vertex)}
+                        >
+                            <div class="vertex-id tabular">{vertex.id}</div>
+                            <div class="vertex-count tabular">{vertex.count}</div>
+                        </button>
+                    </li>
                 {/each}
             </ul>
         </div>
@@ -107,28 +111,33 @@
         width: 100%;
         max-width: 100%;
         max-height: 100%;
-        padding: 1em;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
     }
     
     .vertex-list-header {
-        margin-bottom: 1em; /* Fixed margin */
-        padding-bottom: 0.5em;
+        margin-bottom: 0.75em;
+        padding: 0 0.25em 0.5em;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+        gap: 0.5em;
         flex: 0 0 auto;
-        height: 3em; /* Fixed height for the header */
+        border-bottom: 1px solid var(--border);
     }
     
     .vertex-list-header h2 {
         margin: 0;
-        padding-left: 1em;
-        font-size: 1.5rem;
-        text-align: left;
-        color: #2c3e50;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text-1);
+    }
+
+    .count {
+        font-size: 0.75rem;
+        color: var(--text-3);
     }
     
     .vertex-list-wrapper {
@@ -142,53 +151,62 @@
     .vertex-list-content {
         flex: 1;
         width: 100%;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1), inset 0 -4px 6px rgba(0, 0, 0, 0.1);
+        background-color: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
         overflow: auto;
     }
     
     .vertex-list-legend {
         display: flex;
         justify-content: space-between;
-        padding: 0.5em 1em;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-        font-weight: bold;
+        padding: 0.5em 0.85em;
+        background-color: var(--surface-1);
+        border-bottom: 1px solid var(--border);
+        font-size: 0.6875rem;
+        font-weight: 550;
+        color: var(--text-3);
         position: sticky;
         top: 0;
         z-index: 1;
     }
     
     ul {
-        padding: 0.5em;
+        padding: 0.4em;
         margin: 0;
         list-style-type: none;
+    }
+
+    li {
+        list-style: none;
     }
     
     .vertex-list-item {
         display: flex;
         justify-content: space-between;
+        gap: 0.5em;
         width: 100%;
         text-align: left;
         background: none;
         border: none;
-        padding: 0.5em 1em;
-        margin-top: 0.2em;
+        padding: 0.35em 0.5em;
         font-family: inherit;
-        font-size: inherit;
+        font-size: 0.8125rem;
+        color: var(--text-2);
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
+        transition: background-color var(--speed) ease, color var(--speed) ease;
     }
     
     .vertex-list-item:hover {
-        background-color: #f0f2f5;
+        background-color: var(--surface-3);
+        color: var(--text-1);
     }
     
     .vertex-list-item.selected {
-        background-color: #e6f0ff;
-        color: #0062cc;
-        font-weight: 500;
+        background-color: var(--accent-wash);
+        color: var(--accent);
+        font-weight: 600;
     }
     
     .vertex-id {

@@ -1,52 +1,43 @@
 <script>
     import NavBar from '$lib/components/NavBar.svelte';
     import './style.css';
+
+    let { children } = $props();
 </script>
 
-
-
 <div class="container">
-    <div class="header">
+    <header class="header">
         <NavBar />
-    </div>
-    <div class="main">
-        <slot />
-    </div>
+    </header>
+    <main class="main">
+        {@render children?.()}
+    </main>
 </div>
-
-
 
 <style>
     .container {
-		font-size: 16px;
-		/* make the div take up the entire screen */
-		height: 100vh;
-		width: 100vw;
-		/* add 16px of padding around the div */
-		padding: 1em;
-		/* flex display for header and main */
-		display: flex;
-		flex-direction: column;
-		gap: 1em;
-	}
+        font-size: 16px;
+        /* 100% rather than 100vw: vw includes the scrollbar gutter and was
+           forcing a horizontal scrollbar whenever a panel overflowed */
+        height: 100%;
+        width: 100%;
+        padding: 0.75em 1em 1em;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75em;
+    }
 
-	/* header styling */
-	.header {
-		display: flex;
-		gap: 2em;
-        justify-content: flex-start;
+    .header {
+        display: flex;
         align-items: center;
-	}
+        flex: 0 0 auto;
+    }
 
-	.main {
-		/* make this div take up the rest of the container */
-		flex: 1;
-		/* allow the div to shrink */
-		min-height: 0;
-		/* place the children next to each other */
-		display: flex;
-		/* add space between them */
-        gap: 1em;
-        margin-bottom: 3em;
-	}
-</style> 
+    .main {
+        /* take the rest of the container, and be allowed to shrink */
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        gap: 0.75em;
+    }
+</style>

@@ -79,8 +79,19 @@
 
 
 <style>
+    /* Grid rather than fixed flex bases: with `flex: 0 0 10/70/20%` the three
+       columns summed to 100% and could not shrink, so the column gap overflowed
+       the container and clipped the vertex list. Grid subtracts the gaps from
+       the tracks for us. */
     .main-container {
-        display: flex;
+        display: grid;
+        grid-template-columns:
+            minmax(150px, 10fr)
+            minmax(0, 70fr)
+            minmax(200px, 20fr);
+        /* the row must be bounded by the container, not by its content */
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0.75em;
         width: 100%;
         height: 100%;
         max-width: 100%;
@@ -89,29 +100,23 @@
         box-sizing: border-box;
     }
     
-    /* Apply 10-70-20 ratio */
     .vertex-list {
-        flex: 0 0 10%;
-        min-width: 150px; /* Smaller min-width for vertex list */
-        max-width: 10%;
+        min-width: 0;
+        min-height: 0;
         height: 100%;
         box-sizing: border-box;
     }
     
     .path-stats {
-        flex: 0 0 70%;
-        max-width: 70%;
+        min-width: 0;
+        min-height: 0;
         height: 100%;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
         box-sizing: border-box;
     }
     
     .path-list {
-        flex: 0 0 20%;
-        min-width: 200px;
-        max-width: 20%;
+        min-width: 0;
+        min-height: 0;
         height: 100%;
         box-sizing: border-box;
     }
@@ -119,30 +124,17 @@
     /* Responsive layout for smaller screens */
     @media (max-width: 768px) {
         .main-container {
-            flex-direction: column;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: 200px minmax(400px, 1fr) 300px;
+            overflow: auto;
         }
         
-        .vertex-list {
-            flex: 0 0 auto;
-            width: 100%;
-            max-width: 100%;
-            min-height: 200px;
-            height: auto;
-        }
-        
-        .path-stats {
-            flex: 1;
-            width: 100%;
-            max-width: 100%;
-            min-height: 400px;
-        }
-        
+        .vertex-list,
+        .path-stats,
         .path-list {
-            flex: 0 0 auto;
             width: 100%;
             max-width: 100%;
-            min-height: 300px;
-            height: auto;
+            height: 100%;
         }
     }
 </style>

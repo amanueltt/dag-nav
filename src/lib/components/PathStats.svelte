@@ -257,49 +257,66 @@
     //     });
     // });
 
+    // --- Chart sizing -------------------------------------------------------
+    // The charts used to be hard-coded to 800x700 inside a 70% column, which
+    // overflowed and forced a nested scrollbar. Measure the slot instead and let
+    // each chart render at the width it actually has.
+    let histSlotWidth = $state(0);
+    let scatterSlotWidth = $state(0);
 
-    // Data Processing for Histogram
+    const MIN_CHART_WIDTH = 320;
 
-    // First 
+    const histWidth = $derived(Math.max(MIN_CHART_WIDTH, histSlotWidth));
+    const scatterWidth = $derived(Math.max(MIN_CHART_WIDTH, scatterSlotWidth));
 
+    // Height comes from the panel rather than the slot: measuring the slot would
+    // loop, because the slot also holds the table-twin disclosure below the svg.
+    // The allowance covers the header, the stat row and the card chrome.
+    const chartBoxHeight = $derived.by(() => {
+        const chrome = selectedVertex ? 348 : 256;
+        return Math.round(Math.min(620, Math.max(320, (height || 0) - chrome)));
+    });
 </script>
 
 <div class="path-stats-container">
     <div class="path-stats-header">
-        <h2>Path Statistics {#if currentPathType}({currentPathType}){/if}</h2>
+        <h2>Path Statistics</h2>
+        {#if currentPathType}
+            <span class="chip">{currentPathType}</span>
+        {/if}
     </div>
 
     <div class="path-stats-wrapper">
         <div class="path-stats-content">
             <div class="stats-summary">
                 <div class="stat-card">
-                    <div class="stat-title">Total Paths</div>
-                    <div class="stat-value">{pathStats.count}</div>
+                    <div class="stat-title">Total paths</div>
+                    <div class="stat-value">{pathStats.count.toLocaleString()}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-title">Avg. Length</div>
+                    <div class="stat-title">Avg. length</div>
                     <div class="stat-value">{Number.isNaN(pathStats.avgLength) ? "0.00" : pathStats.avgLength.toFixed(2)}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-title">Min Length</div>
+                    <div class="stat-title">Min length</div>
                     <div class="stat-value">{pathStats.minLength}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-title">Max Length</div>
+                    <div class="stat-title">Max length</div>
                     <div class="stat-value">{pathStats.maxLength}</div>
                 </div>
 
                 {#if currentPathType === 'predicted'}
                 <div class="stat-card">
-                    <div class="stat-title">Correct Paths</div>
-                    <div class="stat-value">{paths.filter(p => p.correct).length}</div>
+                    <div class="stat-title">Correct paths</div>
+                    <div class="stat-value">{paths.filter(p => p.correct).length.toLocaleString()}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-title">Error Rate</div>
+                    <div class="stat-title">Error rate</div>
                     <div class="stat-value">{(paths.length > 0 ? (paths.filter(p => !p.correct).length / paths.length * 100).toFixed(2) : "0.00")}%</div>
                 </div>
                 {/if}
@@ -307,23 +324,23 @@
 
             {#if selectedVertex}
             <div class="selected-vertex-stats">
-                <h3>Selected Vertex: {selectedVertex.id}</h3>
+                <h3>Vertex {selectedVertex.id}</h3>
                 <div class="vertex-stats-grid">
                     <div class="vertex-stat">
-                        <span class="vertex-stat-label">Paths including vertex:</span>
-                        <span class="vertex-stat-value">{vertexStats.pathsIncluding} ({vertexStats.percentOfPaths}%)</span>
+                        <span class="vertex-stat-label">Paths including vertex</span>
+                        <span class="vertex-stat-value tabular">{vertexStats.pathsIncluding} ({vertexStats.percentOfPaths}%)</span>
                     </div>
                     <div class="vertex-stat">
-                        <span class="vertex-stat-label">As start node:</span>
-                        <span class="vertex-stat-value">{vertexStats.asStart}</span>
+                        <span class="vertex-stat-label">As start node</span>
+                        <span class="vertex-stat-value tabular">{vertexStats.asStart}</span>
                     </div>
                     <div class="vertex-stat">
-                        <span class="vertex-stat-label">As end node:</span>
-                        <span class="vertex-stat-value">{vertexStats.asEnd}</span>
+                        <span class="vertex-stat-label">As end node</span>
+                        <span class="vertex-stat-value tabular">{vertexStats.asEnd}</span>
                     </div>
                     <div class="vertex-stat">
-                        <span class="vertex-stat-label">As intermediate node:</span>
-                        <span class="vertex-stat-value">{vertexStats.asIntermediate}</span>
+                        <span class="vertex-stat-label">As intermediate node</span>
+                        <span class="vertex-stat-value tabular">{vertexStats.asIntermediate}</span>
                     </div>
                 </div>
             </div>
@@ -331,33 +348,37 @@
 
             <div class="charts-container">
                 <!-- Histogram container -->
-                <div class="histogram-container">
+                <div class="chart-card">
                     <h3>Path Length Distribution</h3>
-                    <Histogram 
-                        {paths} 
-                        uniquePathLengths={uniquePathLengths}
-                        width={800}
-                        height={700} 
-                        marginLeft={60}
-                        marginTop={60}
-                        marginRight={30} 
-                        marginBottom={50} 
-                    />
+                    <div class="chart-slot" bind:clientWidth={histSlotWidth}>
+                        <Histogram 
+                            {paths} 
+                            uniquePathLengths={uniquePathLengths}
+                            width={histWidth}
+                            height={chartBoxHeight} 
+                            marginLeft={54}
+                            marginTop={24}
+                            marginRight={20} 
+                            marginBottom={52} 
+                        />
+                    </div>
                 </div>
                 
                 <!-- Scatter plot container -->
-                <div class="scatter-container">
+                <div class="chart-card">
                     <h3>Path Length vs Average Degree</h3>
-                    <ScatterPlot 
-                        paths={paths}
-                        width={800}
-                        height={700} 
-                        marginLeft={60}
-                        marginTop={60}
-                        marginRight={30} 
-                        marginBottom={50}
-                        highlightedPath={hoveredPath}
-                    />
+                    <div class="chart-slot" bind:clientWidth={scatterSlotWidth}>
+                        <ScatterPlot 
+                            paths={paths}
+                            width={scatterWidth}
+                            height={chartBoxHeight} 
+                            marginLeft={54}
+                            marginTop={24}
+                            marginRight={20} 
+                            marginBottom={52}
+                            highlightedPath={hoveredPath}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -370,28 +391,40 @@
         width: 100%;
         max-width: 100%;
         max-height: 100%;
-        padding: 1em;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
     }
 
     .path-stats-header {
-        margin-bottom: 1em;
-        padding-bottom: 0.5em;
+        margin-bottom: 0.75em;
+        padding: 0 0.25em 0.5em;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+        gap: 0.6em;
         flex: 0 0 auto;
-        height: 3em;
+        border-bottom: 1px solid var(--border);
     }
 
     .path-stats-header h2 {
         margin: 0;
-        padding-left: 1em;
-        font-size: 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
         text-align: left;
-        color: #2c3e50;
+        color: var(--text-1);
+    }
+
+    /* The path type is metadata about the view, not part of its name */
+    .chip {
+        font-size: 0.6875rem;
+        font-weight: 550;
+        color: var(--text-2);
+        background-color: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15em 0.55em;
     }
 
     .path-stats-wrapper {
@@ -402,103 +435,121 @@
         position: relative;
     }
 
+    /* A hairline ring reads cleaner than the old double inset shadow, and it
+       survives the switch to a dark surface */
     .path-stats-content {
         flex: 1;
         width: 100%;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1), inset 0 -4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        background-color: var(--surface-1);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
         overflow: auto;
         padding: 1em;
         box-sizing: border-box;
     }
 
     .stats-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1em;
-        margin-bottom: 2em;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+        gap: 0.6em;
+        margin-bottom: 1.25em;
+        flex: 0 0 auto;
     }
 
     .stat-card {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1em;
-        min-width: 120px;
-        flex: 1;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        background-color: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.7em 0.8em;
     }
 
     .stat-title {
-        font-size: 0.9rem;
-        color: #6c757d;
-        margin-bottom: 0.5em;
+        font-size: 0.75rem;
+        color: var(--text-3);
+        margin-bottom: 0.35em;
     }
 
+    /* Ink, not accent: the accent is reserved for data and selection. Proportional
+       figures -- tabular-nums makes a display-size number look loose. */
     .stat-value {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #0062cc;
+        font-size: 1.375rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--text-1);
+        line-height: 1.1;
     }
 
     .selected-vertex-stats {
-        background-color: #e6f0ff;
-        border-radius: 8px;
-        padding: 1em;
-        margin-bottom: 2em;
+        background-color: var(--accent-wash);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.85em 1em;
+        margin-bottom: 1.25em;
+        flex: 0 0 auto;
     }
 
     .selected-vertex-stats h3 {
-        margin-top: 0;
-        color: #0062cc;
-        margin-bottom: 1em;
+        margin: 0 0 0.7em;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-1);
     }
 
     .vertex-stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1em;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 0.4em 1.5em;
     }
 
     .vertex-stat {
         display: flex;
         justify-content: space-between;
+        gap: 1em;
+        font-size: 0.8125rem;
     }
 
     .vertex-stat-label {
-        color: #495057;
+        color: var(--text-2);
     }
 
     .vertex-stat-value {
-        font-weight: bold;
+        font-weight: 600;
+        color: var(--text-1);
     }
     
+    /* Grid rather than flex-wrap with hard 50% caps: the cards reflow to one
+       column on their own when the panel gets narrow */
     .charts-container {
-        margin-top: 2em;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5em;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 0.75em;
         width: 100%;
+        flex: 0 0 auto;
     }
 
-    .histogram-container, .scatter-container {
-        flex: 1 1 calc(50% - 1.5em);
-        min-width: 300px;
-        max-width: calc(50% - 0.75em);
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1em;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        height: auto; 
-        min-height: 800px;
+    .chart-card {
+        background-color: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.85em;
+        min-width: 0;
         display: flex;
         flex-direction: column;
     }
 
-    .histogram-container h3, .scatter-container h3 {
-        margin-top: 0;
-        color: #0062cc;
-        margin-bottom: 1em;
+    .chart-card h3 {
+        margin: 0 0 0.85em;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-1);
         flex: 0 0 auto;
+    }
+
+    /* The measured box the chart renders into */
+    .chart-slot {
+        width: 100%;
+        min-width: 0;
     }
 </style>

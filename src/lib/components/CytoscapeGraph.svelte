@@ -1,11 +1,164 @@
 <!-- CytoscapeGraph.svelte -->
 <script>
 	import cytoscape from 'cytoscape';
+    import { theme } from '$lib/stores/theme.svelte.js';
     // import * as d3 from 'd3';
 
-    let { graphmlData, layout, style, highlightedPath = null } = $props();
+    let { graphmlData, layout, highlightedPath = null } = $props();
 	let container;
     let cy;
+
+    // --- Theming -------------------------------------------------------------
+    // Cytoscape styles are plain JS, so they can't reference CSS variables
+    // directly. Read the tokens off :root instead, and rebuild the stylesheet
+    // when the mode changes -- that keeps one source of truth for colour and
+    // avoids a second hard-coded palette drifting out of sync with the CSS.
+    function token(name, fallback) {
+        if (typeof window === 'undefined') return fallback;
+        const value = getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim();
+        return value || fallback;
+    }
+
+    /**
+     * Highlight hues are the three categorical slots validated for all-pairs
+     * use; the base node is a neutral so it doesn't spend a slot. Adding a
+     * fourth hue here would break colourblind separation -- encode with size,
+     * border or opacity instead.
+     */
+    function buildStyle() {
+        const nodeFill = token('--graph-node', '#6b7280');
+        const nodeInk = token('--graph-node-ink', '#ffffff');
+        const edgeLine = token('--graph-edge', '#d8d7d0');
+        const anchorFill = token('--graph-anchor', '#184f95');
+        const anchorInk = token('--graph-anchor-ink', '#ffffff');
+        const accent = token('--accent', '#2a78d6');
+        const neutralInk = token('--text-3', '#898781');
+        const onWarm = token('--on-warm', '#0b0b0b');
+        const path = token('--series-2', '#eb6834');       // hovered path
+        const descendant = token('--series-1', '#2a78d6'); // downstream
+        const ancestor = token('--series-3', '#1baf7a');   // upstream
+
+        return [
+            // Base node -- neutral, so a highlight always reads as a change
+            {
+                selector: 'node',
+                style: {
+                    'background-color': nodeFill,
+                    'label': 'data(id)',
+                    'color': nodeInk,
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'width': '60px',
+                    'height': '60px',
+                    'font-size': '28px',
+                    'font-weight': 'bold'
+                }
+            },
+            // Base edge -- hairline-quiet by default
+            {
+                selector: 'edge',
+                style: {
+                    'width': 4,
+                    'line-color': edgeLine,
+                    'curve-style': 'bezier',
+                    'target-arrow-shape': 'triangle',
+                    'target-arrow-color': edgeLine,
+                    'opacity': 0.6,
+                    'arrow-scale': 1.5
+                }
+            },
+            // Path highlighted from the path list
+            {
+                selector: 'node.path-node',
+                style: {
+                    'background-color': path,
+                    'color': onWarm,
+                    'border-width': 3,
+                    'border-color': path,
+                    'z-index': 20
+                }
+            },
+            {
+                selector: 'edge.path-highlight',
+                style: {
+                    'line-color': path,
+                    'target-arrow-color': path,
+                    'width': 5,
+                    'opacity': 1,
+                    'z-index': 20
+                }
+            },
+            // Outgoing edges of the hovered node -- a state, not a category, so
+            // it stays neutral and only gains weight
+            {
+                selector: 'edge.highlighted',
+                style: {
+                    'line-color': neutralInk,
+                    'target-arrow-color': neutralInk,
+                    'opacity': 1,
+                    'z-index': 10,
+                    'width': 3.5
+                }
+            },
+            // Descendants (left click) -- downstream
+            {
+                selector: 'edge.descendant-edge',
+                style: {
+                    'line-color': descendant,
+                    'target-arrow-color': descendant,
+                    'opacity': 1,
+                    'width': 4,
+                    'z-index': 20
+                }
+            },
+            {
+                selector: 'node.highlighted',
+                style: {
+                    'background-color': descendant,
+                    'color': nodeInk,
+                    'border-width': 3,
+                    'border-color': descendant,
+                    'z-index': 10
+                }
+            },
+            // The clicked node -- size and ring carry it, not a fourth hue
+            {
+                selector: 'node.selected',
+                style: {
+                    'background-color': anchorFill,
+                    'color': anchorInk,
+                    'border-width': 4,
+                    'border-color': accent,
+                    'z-index': 30,
+                    'width': '68px',
+                    'height': '68px'
+                }
+            },
+            // Ancestors (right click) -- upstream
+            {
+                selector: 'node.ancestor',
+                style: {
+                    'background-color': ancestor,
+                    'color': onWarm,
+                    'border-width': 3,
+                    'border-color': ancestor,
+                    'z-index': 10
+                }
+            },
+            {
+                selector: 'edge.ancestor-edge',
+                style: {
+                    'line-color': ancestor,
+                    'target-arrow-color': ancestor,
+                    'opacity': 1,
+                    'width': 4,
+                    'z-index': 20
+                }
+            }
+        ];
+    }
     
     // Function to calculate positions with level-based constraint (custom DAG layout)
     async function calculateDAGPositions(nodes, edges) {
@@ -448,124 +601,7 @@
             // Create new Cytoscape instance
             cy = cytoscape({
                 container,
-                style: [
-                    // Base node style
-                    {
-                        selector: 'node',
-                        style: {
-                            'background-color': '#0062cc',
-                            'label': 'data(id)',
-                            'color': '#fff',
-                            'text-valign': 'center',
-                            'text-halign': 'center',
-                            'width': '60px', // Increased node size
-                            'height': '60px', // Increased node size
-                            'font-size': '28px', // Increased font size
-                            'font-weight': 'bold' // Make labels more readable
-                        }
-                    },
-                    // Base edge style - light gray by default
-                    {
-                        selector: 'edge',
-                        style: {
-                            'width': 4, // Increased edge thickness
-                            'line-color': '#dddddd',
-                            'curve-style': 'bezier',
-                            'target-arrow-shape': 'triangle',
-                            'target-arrow-color': '#dddddd',
-                            'opacity': 0.6,
-                            'arrow-scale': 1.5 // Increased arrow size
-                        }
-                    },
-                    // New style for highlighted path nodes
-                    {
-                        selector: 'node.path-node',
-                        style: {
-                            'background-color': '#ff9900', // Orange for highlighted path
-                            'border-width': 3,
-                            'border-color': '#ffcc00', // Light orange border
-                            'z-index': 20
-                        }
-                    },
-                    // New style for highlighted path edges
-                    {
-                        selector: 'edge.path-highlight',
-                        style: {
-                            'line-color': '#ff9900', // Orange for highlighted path
-                            'target-arrow-color': '#ff9900',
-                            'width': 5,
-                            'opacity': 1,
-                            'z-index': 20
-                        }
-                    },
-                    // Highlighted edges (when hovering over source node)
-                    {
-                        selector: 'edge.highlighted',
-                        style: {
-                            'line-color': '#999',
-                            'target-arrow-color': '#999',
-                            'opacity': 1,
-                            'z-index': 10,
-                            'width': 3.5 // Slightly thicker
-                        }
-                    },
-                    // Purple highlighted edges (between selected nodes)
-                    {
-                        selector: 'edge.descendant-edge',
-                        style: {
-                            'line-color': '#b19cd9', // Light purple
-                            'target-arrow-color': '#b19cd9',
-                            'opacity': 1,
-                            'width': 4, // Thicker edges when highlighted
-                            'z-index': 20
-                        }
-                    },
-                    // Highlighted nodes (descendants)
-                    {
-                        selector: 'node.highlighted',
-                        style: {
-                            'background-color': '#6a0dad', // Dark purple
-                            'color': '#fff',
-                            'border-width': 3,
-                            'border-color': '#b19cd9', // Light purple
-                            'z-index': 10
-                        }
-                    },
-                    // Selected node (clicked)
-                    {
-                        selector: 'node.selected',
-                        style: {
-                            'background-color': '#9400D3', // Hot purple (darker purple)
-                            'border-width': 4,
-                            'border-color': '#B19CD9', // Lighter purple for border
-                            'z-index': 20,
-                            'width': '65px',
-                            'height': '65px'
-                        }
-                    },
-                    // Ancestor nodes (right-clicked)
-                    {
-                        selector: 'node.ancestor',
-                        style: {
-                            'background-color': '#BA55D3', // Medium orchid (lighter purple)
-                            'color': '#fff',
-                            'border-width': 3,
-                            'border-color': '#E6E6FA', // Lavender (very light purple)
-                            'z-index': 10
-                        }
-                    },
-                    // Ancestor edges
-                    {
-                        selector: 'edge.ancestor-edge',
-                        style: {
-                            'line-color': '#ffb6c1', // Light pink
-                            'target-arrow-color': '#ffb6c1',
-                            'opacity': 1,
-                            'width': 4,
-                            'z-index': 20
-                        }
-                    }
-                ],
+                style: buildStyle(),
                 layout: { name: 'preset' }, // Start with preset layout
                 elements: []
             });
@@ -701,6 +737,13 @@
         }
     });
 
+    // Re-skin on a light/dark switch without touching node positions
+    $effect(() => {
+        const mode = theme.value; // tracked, so this re-runs on a toggle
+        if (!cy || !mode) return;
+        cy.style().fromJson(buildStyle()).update();
+    });
+
     // Handle path highlighting separately
     $effect(() => {
         if (!cy) return;
@@ -738,8 +781,8 @@
 		width: 100%;
 		height: 100%;
 		position: relative;
-		background: white;
-		border-radius: 8px;
-		box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+		background: var(--surface-1);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
 	}
 </style>

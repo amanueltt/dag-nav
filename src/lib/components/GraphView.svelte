@@ -50,49 +50,17 @@
 	// Current layout
 	let currentLayout = $state(layouts.cose);
 	
-	// Style for the nodes and edges
-	const style = [
-		{
-			selector: 'node',
-			style: {
-				'background-color': '#0062cc',
-				label: 'data(id)',
-				color: '#fff',
-				'text-valign': 'center',
-				'text-halign': 'center',
-				width: '30px',
-				height: '30px'
-			}
-		},
-		{
-			selector: 'edge',
-			style: {
-				width: 2,
-				'line-color': '#999',
-				'curve-style': 'bezier',
-				'target-arrow-shape': 'triangle',
-				'target-arrow-color': '#999'
-			}
-		}
-	];
+
     // Layout selection options for OptionSelector
     const layoutOptions = [
         { value: 'cose', label: 'Force' },
 		{ value: 'concentric', label: 'Concentric' },
         { value: 'customDAGView', label: 'Custom DAG' }
-        
-    ];
-	// Path type options 
-    const pathTypeOptions = [
-        { value: 'train', label: 'training Paths' },
-        { value: 'valid', label: 'Validation Paths' },
-        { value: 'predicted', label: 'predicted Paths' }
     ];
 	
 	// Handle layout change
 	function changeLayout(layoutName) {
 		currentLayout = layouts[layoutName];
-		console.log('Layout changed to:', layoutName, currentLayout);
 	}
 	
 	// Track container dimensions
@@ -102,24 +70,25 @@
 
 <div class="graph-view-container" bind:clientWidth={containerWidth} bind:clientHeight={containerHeight}>
     <div class="graph-view-header">
-		<h2>
-		Graph View [
-			{layoutOptions.find(option => option.value === currentLayout.name)?.label || currentLayout.name}
-		]
-		</h2>
+		<div class="header-title">
+			<h2>Graph View</h2>
+			<span class="chip">
+				{layoutOptions.find(option => option.value === currentLayout.name)?.label || currentLayout.name}
+			</span>
+		</div>
 		<!-- Option select component for layout options -->
 		<div class="graph-view-selector">
 			<OptionSelector 
 				options={layoutOptions} 
 				activeOption={currentLayout.name} 
 				onSelect={changeLayout} 
-				iconSrc="/icons/graph-view-icon.png"
+				label="Layout"
 			/>
 		</div>
 	</div>
 	
 	<div class="cytoscape-wrapper">
-		<CytoscapeGraph {graphmlData} layout={currentLayout} {style} {highlightedPath} />
+		<CytoscapeGraph {graphmlData} layout={currentLayout} {highlightedPath} />
 	</div>
 </div>
 
@@ -129,32 +98,53 @@
         width: 100%;
         max-width: 100%;
         max-height: 100%;
-        padding: 1em;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
 	}
     
     .graph-view-header {
-        margin-bottom: 1em; /* Fixed margin */
-        padding-bottom: 0.5em;
+        margin-bottom: 0.75em;
+        padding: 0 0.25em 0.5em;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 0.75em;
         flex: 0 0 auto;
-        height: 3em; /* Fixed height for the header */
+        border-bottom: 1px solid var(--border);
     }
+
+	.header-title {
+		display: flex;
+		align-items: center;
+		gap: 0.5em;
+		min-width: 0;
+	}
     
 	.graph-view-header h2 {
         margin: 0;
-        padding-left: 1em;
         text-align: left;
-		font-size: 1.5rem;
-		color: #2c3e50;
+		font-size: 1rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--text-1);
+		white-space: nowrap;
+	}
+
+	/* Which layout is showing is metadata about the view, not its name */
+	.chip {
+		font-size: 0.6875rem;
+		font-weight: 550;
+		color: var(--text-2);
+		background-color: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		padding: 0.15em 0.55em;
+		white-space: nowrap;
 	}
     
     .graph-view-selector {
-        margin-right: 1em;
+        flex: 0 0 auto;
     }
     
     .cytoscape-wrapper {
@@ -163,6 +153,7 @@
         align-items: center;
         justify-content: center;
         width: 100%;
+        min-height: 0;
         overflow: hidden;
         position: relative;
     }

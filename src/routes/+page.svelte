@@ -54,7 +54,11 @@
 
 <style>
     .main-container {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(300px, 70fr) minmax(250px, 30fr);
+        /* the row must be bounded by the container, not by its content */
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0.75em;
         width: 100%;
         height: 100%;
         max-width: 100%;
@@ -64,19 +68,15 @@
     }
     
     .graph-view {
-        flex: 1;
+        min-width: 0;
+        min-height: 0;
         height: 100%;
-        min-width: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-sizing: border-box;
     }
     
     .path-list {
-        flex: 0 0 30%;
-        max-width: 30%;
-        min-width: 250px;
+        min-width: 0;
+        min-height: 0;
         height: 100%;
         box-sizing: border-box;
     }
@@ -84,20 +84,15 @@
     /* Responsive layout for smaller screens */
     @media (max-width: 768px) {
         .main-container {
-            flex-direction: column;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: minmax(300px, 1fr) 300px;
         }
         
-        .graph-view {
-            flex: 1;
-            width: 100%;
-            min-height: 300px;
-        }
-        
+        .graph-view,
         .path-list {
-            flex: 0 0 300px;
             width: 100%;
             max-width: 100%;
-            height: 300px;
+            height: 100%;
         }
     }
 </style>
